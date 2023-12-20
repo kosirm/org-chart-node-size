@@ -1,0 +1,51 @@
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-org-chart@3.0.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-flextree@2.1.2/build/d3-flextree.js"></script>
+
+<div class="chart-container"></div>
+
+<script>
+  fetch(
+    'https://raw.githubusercontent.com/bumbeishvili/sample-data/main/flatData.json'
+  )
+    .then((d) => d.json())
+    .then((data) => {
+      const [min, max] = d3.extent(data, (d) => d.value);
+      const radiusScale = d3.scaleSqrt().domain([min, max]).range([10, 100]);
+      data.forEach((d) => {
+        d._radius = Math.round(radiusScale(d.value) * 10) / 10;
+      });
+
+      const chart = new d3.OrgChart().compact(false);
+
+      chart.layoutBindings().top.linkY = (n) => n.y - 24;
+
+      chart
+        .nodeHeight((d) => d.data._radius)
+        .nodeWidth((d) => d.data._radius)
+        .childrenMargin((d) => 80)
+        .setActiveNodeCentered(false)
+        .container('.chart-container')
+        .nodeUpdate(function (d) {
+          d3.select(this)
+            .select('.node')
+            .on('click.node', (e, d) => {
+              chart.onButtonClick(e, d);
+            });
+
+          d3.select(this).select('.node-button-foreign-object').remove();
+        })
+        //.buttonContent((d) => '')
+        .linkUpdate(function (d) {
+          d3.select(this)
+            .attr('stroke-width', '5px')
+            .style('stroke', 'lightgray');
+        })
+        .nodeContent(
+          (d) =>
+            `<div style='width:100%;height:100%;border-radius:1000px;background-color:lightgray'></div>`
+        )
+        .data(data)
+        .render();
+    });
+</script>
